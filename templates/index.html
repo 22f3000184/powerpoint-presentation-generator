@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PowerPoint Presentation Generator</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+
+        .main-card {
+            background: rgb(226, 212, 212);
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transition: all 0.5s ease-in-out;
+        }
+
+        input,
+        textarea {
+            transition: all 0.3s ease;
+            background-color: #f8fafc;
+            color: #1e293b;
+            border: 1px solid #cbd5e1;
+        }
+
+        input:focus,
+        textarea:focus {
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+            border-color: #4f46e5;
+            background-color: #fff;
+        }
+
+        .btn-primary {
+            background-color: #4f46e5;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .btn-primary:hover {
+            background-color: #4338ca;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+
+        .btn-primary:disabled {
+            background-color: #a5b4fc;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background-color: #475569;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(100, 116, 139, 0.2);
+        }
+
+        .file-input-label {
+            cursor: pointer;
+            border: 2px dashed #cbd5e1;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-label:hover {
+            border-color: #4f46e5;
+            background-color: #f9fafb;
+        }
+
+        .slide-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transform: scale(0.95);
+            opacity: 0;
+            transition: all 0.5s ease-out;
+        }
+
+        .slide-card.visible {
+            transform: scale(1);
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body class="text-slate-800 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-3xl mx-auto">
+        <div class="main-card p-8 md:p-12">
+            <!-- Step 1: Input Form -->
+            <div id="step-1-input">
+                <div class="text-center mb-10">
+                    <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">PowerPoint Presentation Generator</h1>
+                    <p class="text-slate-600 mt-4 text-lg">Your Text, Your Style. Instantly.</p>
+                </div>
+                <form id="ppt-form" class="space-y-6">
+                    <div>
+                        <label for="bulk_text" class="block text-sm font-medium text-slate-700 mb-2">1. Paste Your
+                            Text</label>
+                        <textarea id="bulk_text" rows="10" class="w-full p-4 rounded-lg"
+                            placeholder="Paste your article or notes here..."></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="number_of_slides" class="block text-sm font-medium text-slate-700 mb-2">2.
+                                Number of Slides</label>
+                            <input type="number" id="number_of_slides" class="w-full p-3 rounded-lg" value="3" min="2">
+                        </div>
+                        <div>
+                            <label for="api-key" class="block text-sm font-medium text-slate-700 mb-2">3. Your LLM API
+                                Key (Optional)</label>
+                            <input type="password" id="api-key" class="w-full p-3 rounded-lg"
+                                placeholder="Uses a server key if blank">
+                        </div>
+                    </div>
+                    <div>
+                        <!-- FIX: Updated label to indicate it's optional -->
+                        <label for="template-file" class="block text-sm font-medium text-slate-700 mb-2">4. Upload a
+                            PowerPoint Template (Optional)</label>
+                        <label for="template-file"
+                            class="file-input-label w-full p-6 rounded-lg flex flex-col items-center justify-center text-center">
+                            <i class="fas fa-cloud-upload-alt text-3xl text-slate-400 mb-2"></i>
+                            <span id="file-name-display" class="text-slate-600">Click to browse or drag & drop</span>
+                        </label>
+                        <input type="file" id="template-file" class="hidden" accept=".pptx,.potx">
+                    </div>
+                    <button type="submit" id="plan-btn"
+                        class="w-full text-white font-bold py-4 px-6 rounded-lg shadow-lg flex items-center justify-center space-x-3 btn-primary">
+                        <i class="fas fa-file-alt text-xl"></i>
+                        <span class="text-lg">Generate Plan</span>
+                        <div id="loading-spinner-1"
+                            class="hidden w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin">
+                        </div>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Step 2: Review and Improvise -->
+            <div id="step-2-review" class="hidden">
+                <div class="text-center mb-6">
+                    <h2 class="text-3xl font-extrabold text-gray-900">Review & Refine</h2>
+                    <p class="text-slate-600 mt-2">Here's the AI's plan. You can download it or ask for an
+                        improvisation.</p>
+                </div>
+                <div id="slide-preview-container"
+                    class="space-y-6 max-h-[50vh] overflow-y-auto p-2 bg-slate-50 rounded-lg"></div>
+                <div class="mt-6 space-y-4">
+                    <div>
+                        <label for="improvise_guidance"
+                            class="block text-sm font-medium text-slate-700 mb-2">Improvisation Guidance
+                            (Optional)</label>
+                        <input type="text" id="improvise_guidance" class="w-full p-3 rounded-lg"
+                            placeholder="e.g., 'Make it more formal' or 'Add more technical details'">
+                    </div>
+                    <div class="flex space-x-4">
+                        <button id="improvise-btn"
+                            class="w-full text-white font-bold py-4 px-6 rounded-lg shadow-lg flex items-center justify-center space-x-3 btn-secondary">
+                            <i class="fas fa-sync-alt text-xl"></i>
+                            <span class="text-lg">Improvise</span>
+                            <div id="loading-spinner-2"
+                                class="hidden w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin">
+                            </div>
+                        </button>
+                        <button id="download-btn"
+                            class="w-full text-white font-bold py-4 px-6 rounded-lg shadow-lg flex items-center justify-center space-x-3 btn-primary">
+                            <i class="fas fa-download text-xl"></i>
+                            <span class="text-lg">Download PPT</span>
+                            <div id="loading-spinner-3"
+                                class="hidden w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin">
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <p id="error-message" class="text-red-600 text-center mt-4 h-5"></p>
+        </div>
+    </div>
+
+    <script>
+        const step1 = document.getElementById('step-1-input');
+        const step2 = document.getElementById('step-2-review');
+        const form = document.getElementById('ppt-form');
+        const planBtn = document.getElementById('plan-btn');
+        const improviseBtn = document.getElementById('improvise-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const slidePreviewContainer = document.getElementById('slide-preview-container');
+        const errorMessage = document.getElementById('error-message');
+        const fileInput = document.getElementById('template-file');
+        const fileNameDisplay = document.getElementById('file-name-display');
+
+        let currentMarkdownPlan = '';
+
+        fileInput.addEventListener('change', () => {
+            fileNameDisplay.textContent = fileInput.files.length > 0 ? fileInput.files[0].name : 'Click to browse or drag & drop';
+        });
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!validateInitialForm()) return;
+
+            setLoadingState(planBtn, 'Planning...', true);
+
+            try {
+                const response = await fetch('/generate_plan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        bulk_text: document.getElementById('bulk_text').value,
+                        number_of_slides: parseInt(document.getElementById('number_of_slides').value, 10),
+                        api_key: document.getElementById('api-key').value,
+                        guidance: "A standard professional presentation."
+                    }),
+                });
+
+                if (!response.ok) throw new Error(await response.json().then(d => d.error));
+
+                const data = await response.json();
+                currentMarkdownPlan = data.markdown_plan;
+
+                step1.classList.add('hidden');
+                step2.classList.remove('hidden');
+                renderSlidePreview(currentMarkdownPlan);
+
+            } catch (error) {
+                handleError(error);
+            } finally {
+                setLoadingState(planBtn, 'Generate Plan', false);
+            }
+        });
+
+        improviseBtn.addEventListener('click', async () => {
+            setLoadingState(improviseBtn, 'Improvising...', true);
+
+            try {
+                const response = await fetch('/improvise_plan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        markdown_plan: currentMarkdownPlan,
+                        api_key: document.getElementById('api-key').value,
+                        guidance: document.getElementById('improvise_guidance').value
+                    }),
+                });
+
+                if (!response.ok) throw new Error(await response.json().then(d => d.error));
+
+                const data = await response.json();
+                currentMarkdownPlan = data.markdown_plan;
+                renderSlidePreview(currentMarkdownPlan);
+
+            } catch (error) {
+                handleError(error);
+            } finally {
+                setLoadingState(improviseBtn, 'Improvise', false);
+            }
+        });
+
+        downloadBtn.addEventListener('click', async () => {
+            setLoadingState(downloadBtn, 'Creating...', true);
+
+            try {
+                const formData = new FormData();
+                formData.append('markdown_plan', currentMarkdownPlan);
+                // --- FIX: Only append the file if one is selected ---
+                if (fileInput.files.length > 0) {
+                    formData.append('template_file', fileInput.files[0]);
+                }
+
+                const response = await fetch('/create_file', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) throw new Error(await response.json().then(d => d.error));
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Generated-Presentation.pptx';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+
+            } catch (error) {
+                handleError(error);
+            } finally {
+                setLoadingState(downloadBtn, 'Download PPT', false);
+            }
+        });
+
+        function validateInitialForm() {
+            errorMessage.textContent = '';
+            if (!document.getElementById('bulk_text').value.trim()) {
+                errorMessage.textContent = 'Please provide the text for your presentation.';
+                return false;
+            }
+            // --- FIX: Removed validation that required a template file ---
+            return true;
+        }
+
+        function setLoadingState(button, text, isLoading) {
+            button.disabled = isLoading;
+            button.querySelector('span').textContent = text;
+            button.querySelector('div').classList.toggle('hidden', !isLoading);
+        }
+
+        function handleError(error) {
+            console.error('Error:', error);
+            errorMessage.textContent = error.message || 'An unknown error occurred.';
+        }
+
+        function renderSlidePreview(markdown) {
+            slidePreviewContainer.innerHTML = '';
+            const slides = markdown.split('---').filter(s => s.trim());
+
+            slides.forEach((slideMarkdown, index) => {
+                const lines = slideMarkdown.trim().split('\n');
+                const title = lines.find(l => l.startsWith('#'))?.replace(/#+\s*/, '') || 'Untitled';
+                const subtitle = lines.find(l => l.startsWith('##'))?.replace(/##+\s*/, '') || '';
+                const bullets = lines.filter(l => l.startsWith('-')).map(l => `<li>${l.replace(/-\s*/, '')}</li>`).join('');
+
+                const card = document.createElement('div');
+                card.className = 'slide-card p-6';
+                card.innerHTML = `
+                    <div class="flex items-center mb-4">
+                        <div class="bg-indigo-100 text-indigo-600 font-bold rounded-full h-8 w-8 flex items-center justify-center mr-3">${index + 1}</div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">${title}</h3>
+                            ${subtitle ? `<p class="text-sm text-gray-500">${subtitle}</p>` : ''}
+                        </div>
+                    </div>
+                    ${bullets ? `<ul class="list-disc list-inside text-gray-700 space-y-2">${bullets}</ul>` : ''}
+                `;
+                slidePreviewContainer.appendChild(card);
+
+                setTimeout(() => card.classList.add('visible'), index * 100);
+            });
+        }
+    </script>
+</body>
+
+</html>
